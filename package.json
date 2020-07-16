@@ -1,0 +1,25 @@
+{
+  "name": "toddler-sleep-timer",
+  "version": "1.0.0",
+  "description": "A webapp to show a toddler when they can get up from naps.",
+  "main": "index.html",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jyasskin/toddler-sleep-timer.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/jyasskin/toddler-sleep-timer/issues"
+  },
+  "homepage": "https://github.com/jyasskin/toddler-sleep-timer#readme",
+  "devDependencies": {
+    "typescript": "^3.9.7"
+  }
+}

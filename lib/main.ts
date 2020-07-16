@@ -1,4 +1,4 @@
-import { goFullscreen } from './fullscreen.mjs';
+import { goFullscreen } from './fullscreen.js';
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -20,9 +20,9 @@ const TIMES = [
 /** The number of minutes to delay color changes, to deal with delayed nap starts. */
 let timeDelay = 0;
 
-const goFullscreenButton = document.getElementById("goFullscreen");
-const colorClock = document.getElementById("colorClock");
-const metaThemeColor = document.querySelector("meta[name=theme-color]");
+const goFullscreenButton = document.getElementById("goFullscreen")!;
+const colorClock = document.getElementById("colorClock")!;
+const metaThemeColor = document.querySelector("meta[name=theme-color]")!;
 
 /** setTimeout ID for when the next color change happens. */
 let nextChangeTimeout = -1;
@@ -60,9 +60,9 @@ function computeAndSetColor() {
 
 computeAndSetColor();
 
-function setColor(color) {
+function setColor(color: string) {
   colorClock.style.backgroundColor = color;
   metaThemeColor.setAttribute("content", color);
 }
 
-document.body.addEventListener("click", goFullscreen);
+document.body.addEventListener("click", event => goFullscreen(colorClock, event));

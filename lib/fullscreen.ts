@@ -1,6 +1,6 @@
-import { requestWakeLock } from './wakelock.mjs';
+import { requestWakeLock } from './wakelock.js';
 
-export async function goFullscreen(event) {
+export async function goFullscreen(colorClock: Element, event: MouseEvent) {
   try {
     await colorClock.requestFullscreen({ navigationUI: "hide" });
   } catch (e) {
