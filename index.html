@@ -1,3 +1,13 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<meta charset="utf-8" />
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Toddler Sleep Timer</title>
+<link rel="icon" sizes="192x192" href="icons/icon192.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<meta name="theme-color" content="black" />
+
 <button id="goFullscreen" type="button">Go Fullscreen</button>
 <div id="colorClock" style="width: 95vw; min-height: 90vh;"></div>
 
@@ -21,14 +31,16 @@
 
   const goFullscreenButton = document.getElementById("goFullscreen");
   const colorClock = document.getElementById("colorClock");
+  const metaThemeColor = document.querySelector("meta[name=theme-color]");
 
-  function setColor() {
+  function computeAndSetColor() {
     const now = Date.now();
     const startOfDay = new Date(now).setHours(0, 0, 0, 0);
     const timeInMinutes = (now - startOfDay) / 1000 / 60;
 
-    const activeTime = TIMES.findIndex(({ time }) => time > timeInMinutes) - 1;
-    colorClock.style.backgroundColor = TIMES[activeTime].color;
+    const activeTime =
+      TIMES.findIndex(({ time }) => time > timeInMinutes) - 1;
+    setColor(TIMES[activeTime].color);
     console.log(
       `Turned ${TIMES[activeTime].color} at ${Math.floor(
         TIMES[activeTime].time / 60
@@ -42,11 +54,18 @@
       0,
       0
     );
-    console.log(`Next change to ${nextChange.color} in ${nextChangeTime - now}ms`);
-    setTimeout(setColor, nextChangeTime - now);
+    console.log(
+      `Next change to ${nextChange.color} in ${nextChangeTime - now}ms`
+    );
+    setTimeout(computeAndSetColor, nextChangeTime - now);
   }
 
-  setColor();
+  computeAndSetColor();
+
+  function setColor(color) {
+    colorClock.style.backgroundColor = color;
+    metaThemeColor.setAttribute("content", color);
+  }
 
   async function goFullscreen(event) {
     try {
@@ -74,3 +93,4 @@
   document.addEventListener("visibilitychange", handleVisibilityChange);
   document.addEventListener("fullscreenchange", handleVisibilityChange);
 </script>
+</html>
