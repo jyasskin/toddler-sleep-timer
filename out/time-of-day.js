@@ -1,3 +1,4 @@
+const hourMinuteFormatter = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
 export class TimeOfDay {
     constructor(hour, minute) {
         this.hour = Math.trunc(hour);
@@ -17,26 +18,45 @@ export class TimeOfDay {
         }
         return new TimeOfDay(hour, minute);
     }
-    formatAmPm() {
-        let amPm = 'AM';
-        let hour = this.hour;
-        if (hour > 11) {
-            amPm = 'PM';
-            hour -= 12;
+    /** Inverse of .valueOf(). */
+    static fromMs(sinceMidnight) {
+        const minutesSinceMidnight = sinceMidnight / 1000 / 60;
+        if (minutesSinceMidnight < 0 || minutesSinceMidnight >= 24 * 60 * 60) {
+            throw new Error(`Argument (${sinceMidnight}) must be less than 24 hours.`);
         }
-        if (hour === 0) {
-            hour = 12;
-        }
-        return `${hour}:${this.minute.toString().padStart(2, '0')} ${amPm}`;
+        return new TimeOfDay(minutesSinceMidnight / 60, minutesSinceMidnight % 60);
+    }
+    static ofDate(date) {
+        const startOfDay = new Date(date).setHours(0, 0, 0, 0);
+        return TimeOfDay.fromMs(date.getTime() - startOfDay);
+    }
+    /** Returns the time as a number of milliseconds since midnight. */
+    valueOf() {
+        return this.hour * 60 * 60 * 1000 + this.minute * 60 * 1000;
+    }
+    toString() {
+        return hourMinuteFormatter.format(this.upcomingDate(Date.now()));
     }
     /** Returns the Date instance representing the next time this TimeOfDay will happen. */
     upcomingDate(now) {
-        const nowCopy = new Date(now);
-        nowCopy.setHours(this.hour, this.minute, 0, 0);
-        if (nowCopy.getTime() < now.getTime()) {
-            nowCopy.setDate(nowCopy.getDate() + 1);
+        const upcoming = new Date(now);
+        upcoming.setHours(this.hour, this.minute, 0, 0);
+        if (upcoming < now) {
+            upcoming.setDate(upcoming.getDate() + 1);
         }
-        return nowCopy;
+        return upcoming;
+    }
+    addMinutes(minutes) {
+        const origMs = this.valueOf();
+        let newMs = origMs + (minutes * 60 * 1000);
+        const day = 24 * 60 * 60 * 1000;
+        newMs %= day;
+        if (newMs < 0)
+            newMs += day;
+        return TimeOfDay.fromMs(newMs);
     }
 }
+/** Represents the end of the day, just greater than any time during a day,
+ * including leap seconds. */
+TimeOfDay.END_OF_DAY = new TimeOfDay(24, 1);
 //# sourceMappingURL=time-of-day.js.map

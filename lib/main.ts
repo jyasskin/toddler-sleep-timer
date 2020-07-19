@@ -1,4 +1,6 @@
+import { ColorSchedule } from './colorSchedule.js';
 import { goFullscreen } from './fullscreen.js';
+import { TimeOfDay } from './time-of-day.js';
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -7,15 +9,16 @@ if ("serviceWorker" in navigator) {
 }
 
 const TIMES = [
-  { time: 0, color: "red" },
-  { time: 6 * 60 + 20, color: "yellow" },
-  { time: 7 * 60 + 0, color: "green" },
-  { time: 12 * 60 + 0, color: "red" },
-  { time: 14 * 60 + 0, color: "yellow" },
-  { time: 15 * 60 + 0, color: "green" },
-  { time: 18 * 60 + 30, color: "red" },
-  { time: 24 * 60 + 1, color: "red" },
-];
+  { time: "6:20", color: "yellow" },
+  { time: "7:00", color: "green" },
+  { time: "12:00", color: "red" },
+  { time: "14:00", color: "yellow" },
+  { time: "15:00", color: "green" },
+  { time: "18:30", color: "red" },
+] as const;
+
+const schedule = ColorSchedule.fromChangeList(TIMES);
+let adjustedSchedule = schedule.adjustMinutes(0);
 
 /** The number of minutes to delay color changes, to deal with delayed nap starts. */
 let timeDelay = 0;
@@ -30,32 +33,16 @@ let nextChangeTimeout = -1;
 function computeAndSetColor() {
   clearTimeout(nextChangeTimeout);
 
-  // Adjust "now" to be |timeDelay| minutes earlier so that the times in the
-  // table take effect with a |timeDelay|-minute delay.
-  const now = Date.now() - timeDelay * 1000 * 60;
-  const startOfDay = new Date(now).setHours(0, 0, 0, 0);
-  const timeInMinutes = (now - startOfDay) / 1000 / 60;
+  const now = new Date();
 
-  const activeTime =
-    TIMES.findIndex(({ time }) => time > timeInMinutes) - 1;
-  setColor(TIMES[activeTime].color);
-  console.log(
-    `Turned ${TIMES[activeTime].color} at ${Math.floor(
-      TIMES[activeTime].time / 60
-    )}:${Math.floor(TIMES[activeTime].time % 60)}.`
-  );
+  const { current, next } = adjustedSchedule.find(TimeOfDay.ofDate(now));
+  setColor(current.color);
+  console.log(`Turned ${current.color} at ${current.time}.`);
 
-  const nextChange = TIMES[activeTime + 1];
-  const nextChangeTime = new Date(now).setHours(
-    nextChange.time / 60,
-    nextChange.time % 60,
-    0,
-    0
-  );
-  console.log(
-    `Next change to ${nextChange.color} in ${nextChangeTime - now}ms`
-  );
-  nextChangeTimeout = setTimeout(computeAndSetColor, nextChangeTime - now);
+  const nextDate = next.time.upcomingDate(now);
+  const deltams = nextDate.getTime() - now.getTime();
+  console.log(`Next change to ${next.color} in ${deltams / 1000}s`);
+  nextChangeTimeout = window.setTimeout(computeAndSetColor, deltams);
 }
 
 computeAndSetColor();
