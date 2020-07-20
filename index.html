@@ -11,7 +11,24 @@
     <script type="module" src="out/main.js"></script>
   </head>
   <body>
-    <button id="goFullscreen" type="button">Go Fullscreen</button>
+    <p>Click the active color to make it full screen.</p>
     <div id="colorClock" style="width: 95vw; min-height: 90vh;"></div>
+    <p>
+      <label>
+        Shift times later by
+        <input
+          id="adjustTimes"
+          type="number"
+          value="0"
+          min="-720"
+          max="720"
+          step="1"
+          required
+        />
+        minutes.
+      </label>
+      (Can be negative.)
+    </p>
+    <div id="schedule"></div>
   </body>
 </html>

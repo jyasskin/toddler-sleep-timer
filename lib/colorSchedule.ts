@@ -7,7 +7,7 @@ type ColorChange = {
   readonly color: string,
 };
 
-type ColorTableEntry = { readonly time: TimeOfDay, readonly color: string };
+export type ColorTableEntry = { readonly time: TimeOfDay, readonly color: string };
 
 type FindResult = {
   current: ColorTableEntry

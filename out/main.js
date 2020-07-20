@@ -1,11 +1,17 @@
 import { ColorSchedule } from './colorSchedule.js';
 import { goFullscreen } from './fullscreen.js';
+import { renderSchedule } from './renderSchedule.js';
 import { TimeOfDay } from './time-of-day.js';
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
         navigator.serviceWorker.register("./service-worker.js");
     });
 }
+const colorClock = document.getElementById("colorClock");
+const metaThemeColor = document.querySelector("meta[name=theme-color]");
+const adjustTimes = document.getElementById("adjustTimes");
+const scheduleTable = document.getElementById("schedule");
+;
 const TIMES = [
     { time: "6:20", color: "yellow" },
     { time: "7:00", color: "green" },
@@ -15,24 +21,22 @@ const TIMES = [
     { time: "18:30", color: "red" },
 ];
 const schedule = ColorSchedule.fromChangeList(TIMES);
-let adjustedSchedule = schedule.adjustMinutes(0);
-/** The number of minutes to delay color changes, to deal with delayed nap starts. */
-let timeDelay = 0;
-const goFullscreenButton = document.getElementById("goFullscreen");
-const colorClock = document.getElementById("colorClock");
-const metaThemeColor = document.querySelector("meta[name=theme-color]");
+let adjustedSchedule = schedule.adjustMinutes(adjustTimes.valueAsNumber);
+let currentColor;
 /** setTimeout ID for when the next color change happens. */
 let nextChangeTimeout = -1;
 function computeAndSetColor() {
     clearTimeout(nextChangeTimeout);
     const now = new Date();
     const { current, next } = adjustedSchedule.find(TimeOfDay.ofDate(now));
+    currentColor = current;
     setColor(current.color);
     console.log(`Turned ${current.color} at ${current.time}.`);
     const nextDate = next.time.upcomingDate(now);
     const deltams = nextDate.getTime() - now.getTime();
     console.log(`Next change to ${next.color} in ${deltams / 1000}s`);
     nextChangeTimeout = window.setTimeout(computeAndSetColor, deltams);
+    renderSchedule(adjustedSchedule, currentColor, scheduleTable);
 }
 computeAndSetColor();
 // Sometimes color changes get missed if the page is hidden when the change
@@ -47,5 +51,14 @@ function setColor(color) {
     colorClock.style.backgroundColor = color;
     metaThemeColor.setAttribute("content", color);
 }
-document.body.addEventListener("click", event => goFullscreen(colorClock, event));
+colorClock.addEventListener("click", event => goFullscreen(colorClock, event));
+function setSchedule(newSchedule) {
+    adjustedSchedule = newSchedule;
+    computeAndSetColor();
+}
+adjustTimes.addEventListener("change", event => {
+    if (adjustTimes.validity.valid && !Number.isNaN(adjustTimes.valueAsNumber)) {
+        setSchedule(schedule.adjustMinutes(adjustTimes.valueAsNumber));
+    }
+});
 //# sourceMappingURL=main.js.map

@@ -1,5 +1,6 @@
-import { ColorSchedule } from './colorSchedule.js';
+import { ColorSchedule, ColorTableEntry } from './colorSchedule.js';
 import { goFullscreen } from './fullscreen.js';
+import { renderSchedule } from './renderSchedule.js';
 import { TimeOfDay } from './time-of-day.js';
 
 if ("serviceWorker" in navigator) {
@@ -7,6 +8,11 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./service-worker.js");
   });
 }
+
+const colorClock = document.getElementById("colorClock")!;
+const metaThemeColor = document.querySelector("meta[name=theme-color]")! as HTMLMetaElement;
+const adjustTimes = document.getElementById("adjustTimes")! as HTMLInputElement;
+const scheduleTable = document.getElementById("schedule")! as HTMLElement;;
 
 const TIMES = [
   { time: "6:20", color: "yellow" },
@@ -18,14 +24,8 @@ const TIMES = [
 ] as const;
 
 const schedule = ColorSchedule.fromChangeList(TIMES);
-let adjustedSchedule = schedule.adjustMinutes(0);
-
-/** The number of minutes to delay color changes, to deal with delayed nap starts. */
-let timeDelay = 0;
-
-const goFullscreenButton = document.getElementById("goFullscreen")!;
-const colorClock = document.getElementById("colorClock")!;
-const metaThemeColor = document.querySelector("meta[name=theme-color]")!;
+let adjustedSchedule = schedule.adjustMinutes(adjustTimes.valueAsNumber);
+let currentColor: ColorTableEntry;
 
 /** setTimeout ID for when the next color change happens. */
 let nextChangeTimeout = -1;
@@ -36,6 +36,7 @@ function computeAndSetColor() {
   const now = new Date();
 
   const { current, next } = adjustedSchedule.find(TimeOfDay.ofDate(now));
+  currentColor = current;
   setColor(current.color);
   console.log(`Turned ${current.color} at ${current.time}.`);
 
@@ -43,6 +44,8 @@ function computeAndSetColor() {
   const deltams = nextDate.getTime() - now.getTime();
   console.log(`Next change to ${next.color} in ${deltams / 1000}s`);
   nextChangeTimeout = window.setTimeout(computeAndSetColor, deltams);
+
+  renderSchedule(adjustedSchedule, currentColor, scheduleTable);
 }
 
 computeAndSetColor();
@@ -61,4 +64,15 @@ function setColor(color: string) {
   metaThemeColor.setAttribute("content", color);
 }
 
-document.body.addEventListener("click", event => goFullscreen(colorClock, event));
+colorClock.addEventListener("click", event => goFullscreen(colorClock, event));
+
+function setSchedule(newSchedule: ColorSchedule) {
+  adjustedSchedule = newSchedule;
+  computeAndSetColor();
+}
+
+adjustTimes.addEventListener("change", event => {
+  if (adjustTimes.validity.valid && !Number.isNaN(adjustTimes.valueAsNumber)) {
+    setSchedule(schedule.adjustMinutes(adjustTimes.valueAsNumber));
+  }
+});
