@@ -35,6 +35,14 @@ function computeAndSetColor() {
     nextChangeTimeout = window.setTimeout(computeAndSetColor, deltams);
 }
 computeAndSetColor();
+// Sometimes color changes get missed if the page is hidden when the change
+// timeout ought to fire. Unconditionally recomputing it when the page regains
+// visibility should fix the problem.
+document.addEventListener("visibilitychange", event => {
+    if (document.visibilityState === 'visible') {
+        computeAndSetColor();
+    }
+});
 function setColor(color) {
     colorClock.style.backgroundColor = color;
     metaThemeColor.setAttribute("content", color);
