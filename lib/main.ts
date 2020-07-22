@@ -14,17 +14,40 @@ const metaThemeColor = document.querySelector("meta[name=theme-color]")! as HTML
 const adjustTimes = document.getElementById("adjustTimes")! as HTMLInputElement;
 const scheduleTable = document.getElementById("schedule")! as HTMLElement;;
 
-const TIMES = [
-  { time: "6:20", color: "yellow" },
-  { time: "7:00", color: "green" },
-  { time: "12:00", color: "red" },
-  { time: "14:00", color: "yellow" },
-  { time: "15:00", color: "green" },
-  { time: "18:30", color: "red" },
+const enum LocalStorageKeys {
+  schedule = "schedule",
+}
+
+function saveSchedule(serialized: string) {
+  localStorage.setItem(LocalStorageKeys.schedule, serialized);
+  computeAndSetColor();
+}
+
+const DEFAULT_TIMES = [
+  { time: "6:20", color: "#ffff00" },
+  { time: "7:00", color: "#00ff00" },
+  { time: "12:00", color: "#ff0000" },
+  { time: "14:00", color: "#ffff00" },
+  { time: "15:00", color: "#00ff00" },
+  { time: "18:30", color: "#ff0000" },
 ] as const;
 
-const schedule = ColorSchedule.fromChangeList(TIMES);
-let adjustedSchedule = schedule.adjustMinutes(adjustTimes.valueAsNumber);
+let schedule: ColorSchedule;
+
+function loadSchedule(): void {
+  let savedSchedule = localStorage.getItem(LocalStorageKeys.schedule);
+  if (savedSchedule === null) {
+    savedSchedule = JSON.stringify(DEFAULT_TIMES);
+  }
+  schedule = ColorSchedule.fromJSON(savedSchedule, saveSchedule);
+}
+addEventListener("storage", event => {
+  if (event.key === LocalStorageKeys.schedule) {
+    loadSchedule();
+  }
+});
+loadSchedule();
+
 let currentColor: ColorTableEntry;
 
 /** setTimeout ID for when the next color change happens. */
@@ -35,7 +58,7 @@ function computeAndSetColor() {
 
   const now = new Date();
 
-  const { current, next } = adjustedSchedule.find(TimeOfDay.ofDate(now));
+  const { current, next } = schedule.find(TimeOfDay.ofDate(now));
   currentColor = current;
   setColor(current.color);
   console.log(`Turned ${current.color} at ${current.time}.`);
@@ -45,7 +68,7 @@ function computeAndSetColor() {
   console.log(`Next change to ${next.color} in ${deltams / 1000}s`);
   nextChangeTimeout = window.setTimeout(computeAndSetColor, deltams);
 
-  renderSchedule(adjustedSchedule, currentColor, scheduleTable);
+  renderSchedule(schedule, currentColor, scheduleTable);
 }
 
 computeAndSetColor();
@@ -66,13 +89,9 @@ function setColor(color: string) {
 
 colorClock.addEventListener("click", event => goFullscreen(colorClock, event));
 
-function setSchedule(newSchedule: ColorSchedule) {
-  adjustedSchedule = newSchedule;
-  computeAndSetColor();
-}
-
-adjustTimes.addEventListener("change", event => {
+adjustTimes.addEventListener("input", event => {
   if (adjustTimes.validity.valid && !Number.isNaN(adjustTimes.valueAsNumber)) {
-    setSchedule(schedule.adjustMinutes(adjustTimes.valueAsNumber));
+    schedule.temporaryAdjustMinutes(adjustTimes.valueAsNumber);
+    computeAndSetColor();
   }
 });

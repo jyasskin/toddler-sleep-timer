@@ -1,5 +1,6 @@
 import { Component, html, render } from 'https://unpkg.com/htm/preact/standalone.module.js';
 import { ColorSchedule, ColorTableEntry } from './colorSchedule.js';
+import { TimeOfDay } from './time-of-day.js';
 
 function sameTime(a: ColorTableEntry, b: ColorTableEntry) {
   return a.time.valueOf() === b.time.valueOf();
@@ -21,54 +22,83 @@ function isDark({ r, g, b }: ColorComponents) {
 }
 
 type ColorChangeRowProps = {
+  schedule: ColorSchedule;
+  index: number;
   colorChange: ColorTableEntry;
   currentColor: ColorTableEntry;
 };
 
 class ColorChangeRow extends Component {
-  state: { computedColor: ColorComponents };
   props!: ColorChangeRowProps;
-
-  tr?: Element;
-  setTrRef = (elem: Element) => this.tr = elem;;
 
   constructor() {
     super();
-    this.state = { computedColor: { r: 0, g: 0, b: 0 } };
   }
 
-  componentDidMount() {
-    this.extractBackgroundColor();
+  changeTime = (event: Event) => {
+    this.props.schedule.setTime(this.props.index, TimeOfDay.fromMs((event.target as HTMLInputElement).valueAsNumber));
   }
 
-  componentDidUpdate(prevProps: ColorChangeRowProps) {
-    if (this.props.colorChange.color !== prevProps.colorChange.color) {
-      this.extractBackgroundColor();
-    }
+  changeColor = (event: Event) => {
+    this.props.schedule.setColor(this.props.index, (event.target as HTMLInputElement).value);
   }
 
-  extractBackgroundColor() {
-    if (this.tr != null) {
-      const computedColor = parseRGBACall(getComputedStyle(this.tr).backgroundColor);
-      this.setState({ computedColor });
-    }
+  removeRow = () => {
+    this.props.schedule.removeRow(this.props.index);
   }
 
   render() {
     const { time, color } = this.props.colorChange;
     const active = sameTime(this.props.colorChange, this.props.currentColor) ? "active" : "";
-    const darkBg = isDark(this.state.computedColor) ? " darkBg" : "";
-    return html`<tr ref=${this.setTrRef} class=${active + darkBg} style="background-color: ${color}">
-      <td>${time.toString()}</td><td>${color}</td>
+    return html`<tr class=${active}>
+      <td rowspan="2"><input type="time" value=${time.forInput()} onChange=${this.changeTime}/></td>
+      <td rowspan="2"><input type="color" value=${color} onChange=${this.changeColor}/></td>
+      <td rowspan="2"><button type="button"
+        onClick=${this.removeRow}
+        title="Remove this row"
+        disabled=${this.props.schedule.table.length === 1}>❌</button></td>
     </tr>`;
   }
 };
 
-export function renderSchedule(schedule: ColorSchedule, currentColor: ColorTableEntry, scheduleTable: HTMLElement) {
-  render(html`<table>
+class AddColorChangeRow extends Component {
+  props!: { schedule: ColorSchedule, index: number };
+
+  addRow = () => { this.props.schedule.addRow(this.props.index); }
+
+  render() {
+    return html`<tr>
+      <td rowspan="2"><button type="button" onClick=${this.addRow} title="Add a row">➕</button></td>
+    </tr>`;
+  }
+}
+
+class Schedule extends Component {
+  props!: { schedule: ColorSchedule, currentColor: ColorTableEntry };
+
+  prependRow = () => { this.props.schedule.addRow(0); }
+
+  render() {
+    const { schedule, currentColor } = this.props;
+    return html`<table>
+    <caption>Schedule of color changes</caption>
     <thead>
-      <th>Start time</th><th>Color</th>
+      <th>Start time</th><th>Color</th><th colspan="2">Add or remove rows</th>
     </thead>
-    ${schedule.table.map(colorChange => html`<${ColorChangeRow} ...${{ colorChange, currentColor }}/>`)}
-  </table>`, scheduleTable);
+    <tr>
+      <td style="height:0.5em"/>
+      <td/>
+      <td/>
+      <td rowspan="2"><button type="button" onClick=${this.prependRow} title="Add a row">➕</button></td>
+    </tr>
+    ${schedule.activeTable.flatMap((colorChange, index) => [
+      html`<${ColorChangeRow} key=${colorChange.orig} ...${{ schedule, colorChange, currentColor, index }}/>`,
+      html`<${AddColorChangeRow} ...${{ schedule, index: index + 1 }}/>`,
+    ])}
+  </table>`;
+  }
+}
+
+export function renderSchedule(schedule: ColorSchedule, currentColor: ColorTableEntry, scheduleTable: HTMLElement) {
+  render(html`<${Schedule} ...${{ schedule, currentColor }} />`, scheduleTable);
 }

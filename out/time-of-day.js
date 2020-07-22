@@ -7,7 +7,7 @@ export class TimeOfDay {
     /** Parses 24-hour time, without seconds, into a TimeOfDay object. Throws an
      * exception if the input doesn't parse. */
     static parse(timestring) {
-        const matches = /^([1-2]?\d):(\d\d)$/.exec(timestring);
+        const matches = /^(\d?\d):(\d\d)$/.exec(timestring);
         if (matches === null || matches.length != 3) {
             throw new Error(`Couldn't parse ${timestring} as a time of day.`);
         }
@@ -36,6 +36,13 @@ export class TimeOfDay {
     }
     toString() {
         return hourMinuteFormatter.format(this.upcomingDate(Date.now()));
+    }
+    toJSON() {
+        return this.forInput();
+    }
+    /** Returns a string suitable for the value attribute of an <input type=time> */
+    forInput() {
+        return `${this.hour.toString().padStart(2, '0')}:${this.minute.toString().padStart(2, '0')}`;
     }
     /** Returns the Date instance representing the next time this TimeOfDay will happen. */
     upcomingDate(now) {
