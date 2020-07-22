@@ -18,10 +18,16 @@ class ColorChangeRow extends Component {
     constructor() {
         super();
         this.changeTime = (event) => {
-            this.props.schedule.setTime(this.props.index, TimeOfDay.fromMs(event.target.valueAsNumber));
+            const input = event.target;
+            if (input.validity.valid) {
+                this.props.schedule.setTime(this.props.index, TimeOfDay.fromMs(input.valueAsNumber));
+            }
         };
         this.changeColor = (event) => {
-            this.props.schedule.setColor(this.props.index, event.target.value);
+            const input = event.target;
+            if (input.validity.valid) {
+                this.props.schedule.setColor(this.props.index, input.value);
+            }
         };
         this.removeRow = () => {
             this.props.schedule.removeRow(this.props.index);
@@ -31,8 +37,8 @@ class ColorChangeRow extends Component {
         const { time, color } = this.props.colorChange;
         const active = sameTime(this.props.colorChange, this.props.currentColor) ? "active" : "";
         return html `<tr class=${active}>
-      <td rowspan="2"><input type="time" value=${time.forInput()} onChange=${this.changeTime}/></td>
-      <td rowspan="2"><input type="color" value=${color} onChange=${this.changeColor}/></td>
+      <td rowspan="2"><input type="time" required value=${time.forInput()} onChange=${this.changeTime}/></td>
+      <td rowspan="2"><input type="color" required value=${color} onChange=${this.changeColor}/></td>
       <td rowspan="2"><button type="button"
         onClick=${this.removeRow}
         title="Remove this row"
@@ -62,7 +68,7 @@ class Schedule extends Component {
         return html `<table>
     <caption>Schedule of color changes</caption>
     <thead>
-      <th>Start time</th><th>Color</th><th colspan="2">Add or remove rows</th>
+      <th>Start time</th><th>Color</th><th colspan="2">Add or<br/>remove rows</th>
     </thead>
     <tr>
       <td style="height:0.5em"/>
