@@ -9,6 +9,21 @@
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
     <meta name="theme-color" content="black" />
     <script type="module" src="out/main.js"></script>
+    <style>
+      #schedule table {
+        border-collapse: collapse;
+        color: black;
+      }
+      #schedule td {
+        border: thin solid black;
+      }
+      #schedule tr.active {
+        font-weight: bold;
+      }
+      #schedule tr.darkBg {
+        color: white;
+      }
+    </style>
   </head>
   <body>
     <p>Click the active color to make it full screen.</p>
