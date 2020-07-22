@@ -23,23 +23,27 @@ function saveSchedule(serialized: string) {
   computeAndSetColor();
 }
 
-const DEFAULT_TIMES = [
+const DEFAULT_TIMES = JSON.stringify([
   { time: "6:20", color: "#ffff00" },
   { time: "7:00", color: "#00ff00" },
   { time: "12:00", color: "#ff0000" },
   { time: "14:00", color: "#ffff00" },
   { time: "15:00", color: "#00ff00" },
   { time: "18:30", color: "#ff0000" },
-] as const;
+]);
 
 let schedule: ColorSchedule;
 
 function loadSchedule(): void {
   let savedSchedule = localStorage.getItem(LocalStorageKeys.schedule);
   if (savedSchedule === null) {
-    savedSchedule = JSON.stringify(DEFAULT_TIMES);
+    savedSchedule = DEFAULT_TIMES;
   }
-  schedule = ColorSchedule.fromJSON(savedSchedule, saveSchedule);
+  try {
+    schedule = ColorSchedule.fromJSON(savedSchedule, saveSchedule);
+  } catch {
+    schedule = ColorSchedule.fromJSON(DEFAULT_TIMES, saveSchedule);
+  }
 }
 addEventListener("storage", event => {
   if (event.key === LocalStorageKeys.schedule) {
